@@ -6,13 +6,15 @@ from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.core.utils.async_utils import safe_ensure_future
 
 from .import_command import ImportCommand
+from hummingbot.client.config.config_var import ConfigVar
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication
 
 
 class PreviousCommand:
-    def previous_strategy(
+    def previous_statrategy(
         self,  # type: HummingbotApplication
         option: str,
     ):
@@ -24,7 +26,7 @@ class PreviousCommand:
         if previous_strategy_file is not None:
             safe_ensure_future(self.prompt_for_previous_strategy(previous_strategy_file))
         else:
-            self.notify("No previous strategy found.")
+            self._notify("No previous strategy found.")
 
     async def prompt_for_previous_strategy(
         self,  # type: HummingbotApplication
@@ -36,7 +38,7 @@ class PreviousCommand:
 
         previous_strategy = ConfigVar(
             key="previous_strategy_answer",
-            prompt=f"Do you want to import the previously stored config? [{file_name}] (Yes/No) >>>",
+            prompt=f"Dou you want to import the previously stored strategy? ({file_name}) (Yes/No) >>>",
             type_str="bool",
             validator=validate_bool,
         )
@@ -74,6 +76,6 @@ class PreviousCommand:
         config.value = parse_cvar_value(config, input_value)
         err_msg = await config.validate(input_value)
         if err_msg is not None:
-            self.notify(err_msg)
+            self._notify(err_msg)
             config.value = None
             await self.prompt_answer(config)
