@@ -17,6 +17,11 @@ from .start_command import StartCommand
 from .status_command import StatusCommand
 from .stop_command import StopCommand
 from .ticker_command import TickerCommand
+from .gateway_command import GatewayCommand
+from .script_command import ScriptCommand
+from .rate_command import RateCommand
+from .previous_strategy_command import PreviousCommand
+
 
 __all__ = [
     BalanceCommand,
