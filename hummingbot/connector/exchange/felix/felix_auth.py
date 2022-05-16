@@ -6,7 +6,7 @@ from urllib.parse import urlencode
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSRequest
+from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class FelixAuth(AuthBase):
@@ -22,7 +22,10 @@ class FelixAuth(AuthBase):
         the required parameter in the request header.
         :param request: the request to be configured for authenticated interaction
         """
-        request.params = self.add_auth_to_params(params=request.params)
+        if request.method == RESTMethod.POST and request.data:
+            request.data = self.add_auth_to_params(params=request.data)
+        else:
+            request.params = self.add_auth_to_params(params=request.params)
 
         headers = {}
         if request.headers is not None:

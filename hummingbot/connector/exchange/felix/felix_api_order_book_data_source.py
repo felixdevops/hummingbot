@@ -438,6 +438,8 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
             params=params,
             method=RESTMethod.GET,
         )
+        if "code" not in resp_json or resp_json["code"] != 0:
+            raise Exception(resp_json["msg"])
 
         return float(resp_json["data"]["price"])
 
@@ -461,6 +463,8 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 time_synchronizer=time_synchronizer,
                 method=RESTMethod.GET,
             )
+            if "code" not in data or data["code"] != 0:
+                raise Exception(data["msg"])
 
             for symbol_data in filter(felix_utils.is_exchange_information_valid, data["data"]["list"]):
                 trading_pair = combine_to_hb_trading_pair(base=symbol_data["baseAsset"],
@@ -469,7 +473,7 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 type_mapping[trading_pair] = symbol_data["type"]
 
         except Exception as ex:
-            cls.logger().error(f"There was an error requesting exchange info ({str(ex)})")
+            cls.logger().error(f"There was an error requesting symbols ({str(ex)})")
 
         cls._trading_pair_symbol_map = mapping
         cls._trading_pair_symbol_type_map = type_mapping

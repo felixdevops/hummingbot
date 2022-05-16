@@ -86,7 +86,7 @@ async def api_request(path: str,
     rest_assistant = await api_factory.get_rest_assistant()
 
     local_headers = {
-        "Content-Type": "application/json" if method == RESTMethod.POST else "application/x-www-form-urlencoded"}
+        "Content-Type": "application/x-www-form-urlencoded"}
     local_headers.update(headers)
     if is_auth_required:
         url = private_rest_url(path, type=type)

@@ -149,7 +149,7 @@ class FelixExchange(ExchangeBase):
 
     @staticmethod
     def felix_order_type(order_type: OrderType) -> str:
-        return order_type.name.upper()
+        return CONSTANTS.ORDER_TYPE[order_type]
 
     @staticmethod
     def to_hb_order_type(felix_type: str) -> OrderType:
@@ -488,11 +488,9 @@ class FelixExchange(ExchangeBase):
             time_synchronizer=self._felix_time_synchronizer)
         api_params = {"symbol": symbol,
                       "side": side_str,
-                      "quantity": amount_str,
                       "type": type_str,
+                      "quantity": amount_str,
                       "price": price_str}
-        if order_type == OrderType.LIMIT:
-            api_params["timeInForce"] = CONSTANTS.TIME_IN_FORCE_GTC
 
         try:
             order_result = await self._api_request(
@@ -500,6 +498,8 @@ class FelixExchange(ExchangeBase):
                 path_url=CONSTANTS.CREATE_ORDER_PATH_URL,
                 data=api_params,
                 is_auth_required=True)
+            if "code" not in order_result or order_result["code"] != 0:
+                raise Exception(order_result["msg"])
 
             exchange_order_id = str(order_result["data"]["orderId"])
 
@@ -547,6 +547,8 @@ class FelixExchange(ExchangeBase):
                     path_url=CONSTANTS.CANCEL_ORDER_PATH_URL,
                     params=api_params,
                     is_auth_required=True)
+                if "code" not in cancel_result or cancel_result["code"] != 0:
+                    raise Exception(cancel_result["msg"])
 
                 if cancel_result["data"]["status"] == 0:
                     order_update: OrderUpdate = OrderUpdate(
@@ -909,6 +911,8 @@ class FelixExchange(ExchangeBase):
             method=RESTMethod.GET,
             path_url=CONSTANTS.ACCOUNTS_PATH_URL,
             is_auth_required=True)
+        if "code" not in account_info or account_info["code"] != 0:
+            raise Exception(account_info["msg"])
 
         balances = account_info["data"]["accountAssets"]
         for balance_entry in balances:

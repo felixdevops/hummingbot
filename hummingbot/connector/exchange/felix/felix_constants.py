@@ -1,4 +1,5 @@
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
+from hummingbot.core.data_type.common import OrderType
 from hummingbot.core.data_type.in_flight_order import OrderState
 
 DEFAULT_TYPE = 2
@@ -31,8 +32,8 @@ WS_HEARTBEAT_TIME_INTERVAL = 30
 
 # Felix params
 
-SIDE_BUY = 'BUY'
-SIDE_SELL = 'SELL'
+SIDE_BUY = '0'
+SIDE_SELL = '1'
 
 TIME_IN_FORCE_GTC = 'GTC'  # Good till cancelled
 TIME_IN_FORCE_IOC = 'IOC'  # Immediate or cancel
@@ -60,6 +61,12 @@ ORDER_STATE = {
     4: OrderState.PENDING_CANCEL,
     5: OrderState.FAILED,
     6: OrderState.FAILED,
+}
+
+ORDER_TYPE = {
+    OrderType.LIMIT: "1",
+    OrderType.MARKET: "2",
+    OrderType.LIMIT_MAKER: "7"
 }
 
 # Websocket event types

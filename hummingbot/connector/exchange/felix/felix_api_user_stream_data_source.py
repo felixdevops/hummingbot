@@ -109,6 +109,8 @@ class FelixAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 type=self._type,
                 method=RESTMethod.POST,
                 is_auth_required=True)
+            if "code" not in data or data["code"] != 0:
+                raise Exception(data["msg"])
         except asyncio.CancelledError:
             raise
         except Exception as exception:
