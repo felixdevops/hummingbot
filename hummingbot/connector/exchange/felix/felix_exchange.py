@@ -420,8 +420,8 @@ class FelixExchange(ExchangeBase):
                 for cr in cancellation_results:
                     if isinstance(cr, Exception):
                         continue
-                    if isinstance(cr, dict) and "origClientOrderId" in cr:
-                        client_order_id = cr.get("origClientOrderId")
+                    if isinstance(cr, dict) and "clientId" in cr:
+                        client_order_id = cr.get("clientId")
                         order_id_set.remove(client_order_id)
                         successful_cancellations.append(CancellationResult(client_order_id, True))
         except Exception:
@@ -489,6 +489,7 @@ class FelixExchange(ExchangeBase):
         api_params = {"symbol": symbol,
                       "side": side_str,
                       "type": type_str,
+                      "clientId": order_id,
                       "price": price_str}
         if trade_type == TradeType.BUY and order_type == OrderType.MARKET:
             api_params["quoteOrderQty"] = amount_str
@@ -552,18 +553,16 @@ class FelixExchange(ExchangeBase):
                     path_url=CONSTANTS.CANCEL_ORDER_PATH_URL,
                     params=api_params,
                     is_auth_required=True)
-                if "code" not in cancel_result or cancel_result["code"] != 0:
-                    raise Exception(cancel_result["msg"])
 
-                if cancel_result["data"]["status"] == 0:
+                if "code" in cancel_result and cancel_result["code"] == 0 and cancel_result["data"]["status"] == 3:
                     order_update: OrderUpdate = OrderUpdate(
                         client_order_id=order_id,
                         trading_pair=tracked_order.trading_pair,
                         update_timestamp=self.current_timestamp,
-                        new_state=OrderState.CANCELLED,
+                        new_state=OrderState.CANCELED,
                     )
                     self._order_tracker.process_order_update(order_update)
-                    return cancel_result
+                    return cancel_result["data"]
 
             except asyncio.CancelledError:
                 raise

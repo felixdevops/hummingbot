@@ -4,8 +4,8 @@ from hummingbot.core.data_type.in_flight_order import OrderState
 
 DEFAULT_TYPE = 2
 
-HBOT_ORDER_ID_PREFIX = "x-XEKWYICX"
-MAX_ORDER_ID_LEN = 36
+HBOT_ORDER_ID_PREFIX = "FLX"
+MAX_ORDER_ID_LEN = 32
 
 # Base URL
 REST_URL_1 = "https://api.binance.com/api"
