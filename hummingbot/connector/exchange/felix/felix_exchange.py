@@ -489,8 +489,11 @@ class FelixExchange(ExchangeBase):
         api_params = {"symbol": symbol,
                       "side": side_str,
                       "type": type_str,
-                      "quantity": amount_str,
                       "price": price_str}
+        if trade_type == TradeType.BUY and order_type == OrderType.MARKET:
+            api_params["quoteOrderQty"] = amount_str
+        else:
+            api_params["quantity"] = amount_str
 
         try:
             order_result = await self._api_request(
@@ -516,7 +519,7 @@ class FelixExchange(ExchangeBase):
             raise
         except Exception as e:
             self.logger().network(
-                f"Error submitting {side_str} {type_str} order to Felix for "
+                f"Error submitting {trade_type.name} {order_type.name} order to Felix for "
                 f"{amount} {trading_pair} "
                 f"{price}.",
                 exc_info=True,

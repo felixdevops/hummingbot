@@ -66,7 +66,7 @@ ORDER_STATE = {
 ORDER_TYPE = {
     OrderType.LIMIT: "1",
     OrderType.MARKET: "2",
-    OrderType.LIMIT_MAKER: "7"
+    OrderType.LIMIT_MAKER: "1"
 }
 
 # Websocket event types
