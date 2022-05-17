@@ -504,6 +504,8 @@ class FelixExchange(ExchangeBase):
             if "code" not in order_result or order_result["code"] != 0:
                 raise Exception(order_result["msg"])
 
+            self.logger().debug(f"Created order: {order_result}")
+
             exchange_order_id = str(order_result["data"]["orderId"])
 
             order_update: OrderUpdate = OrderUpdate(
@@ -543,10 +545,10 @@ class FelixExchange(ExchangeBase):
         if tracked_order is not None:
             try:
                 api_params = {
-                    "orderId": order_id,
+                    "orderId": tracked_order.exchange_order_id,
                 }
                 cancel_result = await self._api_request(
-                    method=RESTMethod.DELETE,
+                    method=RESTMethod.POST,
                     path_url=CONSTANTS.CANCEL_ORDER_PATH_URL,
                     params=api_params,
                     is_auth_required=True)
@@ -863,7 +865,8 @@ class FelixExchange(ExchangeBase):
             tasks = [self._api_request(
                 method=RESTMethod.GET,
                 path_url=CONSTANTS.QUERY_ORDER_PATH_URL,
-                params={"orderId": o.client_order_id},
+                params={
+                    "orderId": o.exchange_order_id},
                 is_auth_required=True) for o in tracked_orders]
             self.logger().debug(f"Polling for order status updates of {len(tasks)} orders.")
             results = await safe_gather(*tasks, return_exceptions=True)
@@ -874,7 +877,7 @@ class FelixExchange(ExchangeBase):
                 if client_order_id not in self.in_flight_orders:
                     continue
 
-                if isinstance(order_update, Exception):
+                if isinstance(order_update, Exception) or "code" not in order_update or order_update["code"] != 0:
                     self.logger().network(
                         f"Error fetching status update for the order {client_order_id}: {order_update}.",
                         app_warning_msg=f"Failed to fetch status update for the order {client_order_id}."
