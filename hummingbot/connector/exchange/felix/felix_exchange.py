@@ -631,6 +631,7 @@ class FelixExchange(ExchangeBase):
         """
         Example:
         {
+            "type": 1,
             "symbol": "ETH_BTC",
             "baseAssetPrecision": 8,
             "quotePrecision": 8,
@@ -658,7 +659,7 @@ class FelixExchange(ExchangeBase):
         for rule in filter(felix_utils.is_exchange_information_valid, trading_pair_rules):
             try:
                 trading_pair = await FelixAPIOrderBookDataSource.trading_pair_associated_to_exchange_symbol(
-                    symbol=rule.get("symbol"),
+                    symbol=rule.get("symbol").replace("_", "") if rule.get("type") == 1 else rule.get("symbol"),
                     api_factory=self._api_factory,
                     throttler=self._throttler,
                     time_synchronizer=self._felix_time_synchronizer)

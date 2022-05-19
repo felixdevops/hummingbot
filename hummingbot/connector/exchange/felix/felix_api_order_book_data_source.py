@@ -348,14 +348,12 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
         """
         type = FelixAPIOrderBookDataSource.trading_pair_symbol_type(trading_pair=trading_pair)
         path = CONSTANTS.SNAPSHOT_PATH_URL if type == 2 else CONSTANTS.SNAPSHOT_PATH_URL_1
-        symbol = await self.exchange_symbol_associated_to_pair(
-            trading_pair=trading_pair,
-            api_factory=self._api_factory,
-            throttler=self._throttler,
-            time_synchronizer=self._time_synchronizer)
-
         params = {
-            "symbol": symbol.replace("_", "") if type == 1 else symbol
+            "symbol": await self.exchange_symbol_associated_to_pair(
+                trading_pair=trading_pair,
+                api_factory=self._api_factory,
+                throttler=self._throttler,
+                time_synchronizer=self._time_synchronizer)
         }
         if limit != 0:
             params["limit"] = str(limit)
@@ -469,7 +467,7 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
             for symbol_data in filter(felix_utils.is_exchange_information_valid, data["data"]["list"]):
                 trading_pair = combine_to_hb_trading_pair(base=symbol_data["baseAsset"],
                                                           quote=symbol_data["quoteAsset"])
-                mapping[symbol_data["symbol"]] = trading_pair
+                mapping[symbol_data["symbol"].replace("_", "") if symbol_data["type"] == 1 else symbol_data["symbol"]] = trading_pair
                 type_mapping[trading_pair] = symbol_data["type"]
 
         except Exception as ex:
