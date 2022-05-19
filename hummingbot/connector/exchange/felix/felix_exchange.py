@@ -481,11 +481,7 @@ class FelixExchange(ExchangeBase):
         price_str = f"{price:f}"
         type_str = FelixExchange.felix_order_type(order_type)
         side_str = CONSTANTS.SIDE_BUY if trade_type is TradeType.BUY else CONSTANTS.SIDE_SELL
-        symbol = await FelixAPIOrderBookDataSource.exchange_symbol_associated_to_pair(
-            trading_pair=trading_pair,
-            api_factory=self._api_factory,
-            throttler=self._throttler,
-            time_synchronizer=self._felix_time_synchronizer)
+        symbol = trading_pair.replace("-", "_")
         api_params = {"symbol": symbol,
                       "side": side_str,
                       "type": type_str,
