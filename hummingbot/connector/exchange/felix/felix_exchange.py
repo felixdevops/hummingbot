@@ -499,11 +499,15 @@ class FelixExchange(ExchangeBase):
                 data=api_params,
                 is_auth_required=True)
             if "code" not in order_result or order_result["code"] != 0:
+                self.logger().error(f"Failed to created order: {order_result}")
                 raise Exception(order_result["msg"])
 
             self.logger().debug(f"Created order: {order_result}")
 
             exchange_order_id = str(order_result["data"]["orderId"])
+            if not exchange_order_id:
+                self.logger().error(f"Failed to created order: {order_result}")
+                raise Exception("empty exchange_order_id")
 
             order_update: OrderUpdate = OrderUpdate(
                 client_order_id=order_id,
@@ -540,6 +544,9 @@ class FelixExchange(ExchangeBase):
         """
         tracked_order = self._order_tracker.fetch_tracked_order(order_id)
         if tracked_order is not None:
+            if not tracked_order.exchange_order_id:
+                return {"clientId": order_id}
+
             try:
                 api_params = {
                     "orderId": tracked_order.exchange_order_id,
@@ -863,7 +870,7 @@ class FelixExchange(ExchangeBase):
                 path_url=CONSTANTS.QUERY_ORDER_PATH_URL,
                 params={
                     "orderId": o.exchange_order_id},
-                is_auth_required=True) for o in tracked_orders]
+                is_auth_required=True) for o in tracked_orders if o.exchange_order_id]
             self.logger().debug(f"Polling for order status updates of {len(tasks)} orders.")
             results = await safe_gather(*tasks, return_exceptions=True)
             for order_update, tracked_order in zip(results, tracked_orders):
