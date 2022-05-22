@@ -41,8 +41,6 @@ TIME_IN_FORCE_FOK = 'FOK'  # Fill or kill
 
 # Rate Limit Type
 REQUEST_WEIGHT = "REQUEST_WEIGHT"
-ORDERS = "ORDERS"
-ORDERS_24HR = "ORDERS_24HR"
 
 # Rate Limit time intervals
 ONE_MINUTE = 60
@@ -76,35 +74,27 @@ TRADE_EVENT_TYPE = "trade"
 RATE_LIMITS = [
     # Pools
     RateLimit(limit_id=REQUEST_WEIGHT, limit=1200, time_interval=ONE_MINUTE),
-    RateLimit(limit_id=ORDERS, limit=10, time_interval=ONE_SECOND),
-    RateLimit(limit_id=ORDERS_24HR, limit=100000, time_interval=ONE_DAY),
     # Weighted Limits
     RateLimit(limit_id=TICKER_PRICE_CHANGE_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 40)]),
+              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1)]),
     RateLimit(limit_id=SYMBOLS_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[(LinkedLimitWeightPair(REQUEST_WEIGHT, 10))]),
+              linked_limits=[(LinkedLimitWeightPair(REQUEST_WEIGHT, 1))]),
     RateLimit(limit_id=SNAPSHOT_PATH_URL_1, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 50)]),
+              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 2)]),
     RateLimit(limit_id=SNAPSHOT_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 50)]),
+              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 5)]),
     RateLimit(limit_id=USER_STREAM_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
               linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1)]),
     RateLimit(limit_id=SERVER_TIME_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
               linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1)]),
     RateLimit(limit_id=ACCOUNTS_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 10)]),
+              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 5)]),
     RateLimit(limit_id=MY_TRADES_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 10)]),
+              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 5)]),
     RateLimit(limit_id=CREATE_ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1),
-                             LinkedLimitWeightPair(ORDERS, 1),
-                             LinkedLimitWeightPair(ORDERS_24HR, 1)]),
+              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 5)]),
     RateLimit(limit_id=CANCEL_ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1),
-                             LinkedLimitWeightPair(ORDERS, 1),
-                             LinkedLimitWeightPair(ORDERS_24HR, 1)]),
+              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1)]),
     RateLimit(limit_id=QUERY_ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1),
-                             LinkedLimitWeightPair(ORDERS, 1),
-                             LinkedLimitWeightPair(ORDERS_24HR, 1)]),
+              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1)]),
 ]
