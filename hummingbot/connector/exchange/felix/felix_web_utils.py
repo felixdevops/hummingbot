@@ -9,27 +9,27 @@ from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RES
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
-def public_rest_url(path_url: str, type: int = CONSTANTS.DEFAULT_TYPE) -> str:
+def public_rest_url(path_url: str, token_type: int = CONSTANTS.DEFAULT_TYPE) -> str:
     """
     Creates a full URL for provided public REST endpoint
     :param path_url: a public REST endpoint
-    :param type: the type of the token. Default value is 1
+    :param token_type: the type of the token. Default value is 1
     :return: the full URL to the endpoint
     """
-    if type == 1:
+    if token_type == 1:
         return CONSTANTS.REST_URL_1 + path_url
     else:
         return CONSTANTS.REST_URL_2 + path_url
 
 
-def private_rest_url(path_url: str, type: int = CONSTANTS.DEFAULT_TYPE) -> str:
+def private_rest_url(path_url: str, token_type: int = CONSTANTS.DEFAULT_TYPE) -> str:
     """
     Creates a full URL for provided private REST endpoint
     :param path_url: a private REST endpoint
-    :param type: the type of the token. Default value is 1
+    :param token_type: the type of the token. Default value is 1
     :return: the full URL to the endpoint
     """
-    if type == 1:
+    if token_type == 1:
         return CONSTANTS.REST_URL_1 + path_url
     else:
         return CONSTANTS.REST_URL_2 + path_url
@@ -65,7 +65,7 @@ async def api_request(path: str,
                       api_factory: Optional[WebAssistantsFactory] = None,
                       throttler: Optional[AsyncThrottler] = None,
                       time_synchronizer: Optional[TimeSynchronizer] = None,
-                      type: int = CONSTANTS.DEFAULT_TYPE,
+                      token_type: int = CONSTANTS.DEFAULT_TYPE,
                       params: Optional[Dict[str, Any]] = None,
                       data: Optional[Dict[str, Any]] = None,
                       method: RESTMethod = RESTMethod.GET,
@@ -89,9 +89,9 @@ async def api_request(path: str,
         "Content-Type": "application/x-www-form-urlencoded"}
     local_headers.update(headers)
     if is_auth_required:
-        url = private_rest_url(path, type=type)
+        url = private_rest_url(path, token_type=token_type)
     else:
-        url = public_rest_url(path, type=type)
+        url = public_rest_url(path, token_type=token_type)
 
     request = RESTRequest(
         method=method,
@@ -130,7 +130,7 @@ async def get_current_server_time(
         path=CONSTANTS.SERVER_TIME_PATH_URL,
         api_factory=api_factory,
         throttler=throttler,
-        type=2,
+        token_type=CONSTANTS.DEFAULT_TYPE,
         method=RESTMethod.GET)
     server_time = response["timestamp"]
 

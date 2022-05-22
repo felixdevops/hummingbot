@@ -26,7 +26,7 @@ class FelixAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
     def __init__(self,
                  auth: FelixAuth,
-                 type: int = CONSTANTS.DEFAULT_TYPE,
+                 token_type: int = CONSTANTS.DEFAULT_TYPE,
                  api_factory: Optional[WebAssistantsFactory] = None,
                  throttler: Optional[AsyncThrottler] = None,
                  time_synchronizer: Optional[TimeSynchronizer] = None):
@@ -35,12 +35,12 @@ class FelixAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._time_synchronizer = time_synchronizer
         self._current_listen_key = None
         self._last_recv_time: float = 0
-        self._type = type
+        self._token_type = token_type
         self._throttler = throttler
         self._api_factory = api_factory or web_utils.build_api_factory(
             throttler=self._throttler,
             time_synchronizer=self._time_synchronizer,
-            type=self._type,
+            token_type=self._token_type,
             auth=self._auth)
         self._rest_assistant: Optional[RESTAssistant] = None
         self._ws_assistant: Optional[WSAssistant] = None
@@ -106,7 +106,7 @@ class FelixAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 api_factory=self._api_factory,
                 throttler=self._throttler,
                 time_synchronizer=self._time_synchronizer,
-                type=self._type,
+                token_type=self._token_type,
                 method=RESTMethod.POST,
                 is_auth_required=True)
             if "code" not in data or data["code"] != 0:
@@ -125,7 +125,7 @@ class FelixAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 api_factory=self._api_factory,
                 throttler=self._throttler,
                 time_synchronizer=self._time_synchronizer,
-                type=self._type,
+                token_type=self._token_type,
                 params={"listenKey": self._current_listen_key},
                 method=RESTMethod.PUT,
                 is_auth_required=True,

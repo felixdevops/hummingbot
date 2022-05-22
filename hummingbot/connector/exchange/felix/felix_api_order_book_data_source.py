@@ -35,18 +35,18 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(self,
                  trading_pairs: List[str],
-                 type: int = CONSTANTS.DEFAULT_TYPE,
+                 token_type: int = CONSTANTS.DEFAULT_TYPE,
                  api_factory: Optional[WebAssistantsFactory] = None,
                  throttler: Optional[AsyncThrottler] = None,
                  time_synchronizer: Optional[TimeSynchronizer] = None):
         super().__init__(trading_pairs)
         self._time_synchronizer = time_synchronizer
-        self._type = type
+        self._token_type = token_type
         self._throttler = throttler
         self._api_factory = api_factory or web_utils.build_api_factory(
             throttler=self._throttler,
             time_synchronizer=self._time_synchronizer,
-            type=self._type,
+            token_type=self._token_type,
         )
         self._order_book_create_function = lambda: OrderBook()
         self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
@@ -346,8 +346,8 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         :return: the response from the exchange (JSON dictionary)
         """
-        type = FelixAPIOrderBookDataSource.trading_pair_symbol_type(trading_pair=trading_pair)
-        path = CONSTANTS.SNAPSHOT_PATH_URL if type == 2 else CONSTANTS.SNAPSHOT_PATH_URL_1
+        token_type = FelixAPIOrderBookDataSource.trading_pair_symbol_type(trading_pair=trading_pair)
+        path = CONSTANTS.SNAPSHOT_PATH_URL if token_type == CONSTANTS.DEFAULT_TYPE else CONSTANTS.SNAPSHOT_PATH_URL_1
         params = {
             "symbol": await self.exchange_symbol_associated_to_pair(
                 trading_pair=trading_pair,
@@ -363,12 +363,12 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
             api_factory=self._api_factory,
             throttler=self._throttler,
             time_synchronizer=self._time_synchronizer,
-            type=type,
+            token_type=token_type,
             params=params,
             method=RESTMethod.GET,
         )
 
-        return data["data"] if type == 2 else data
+        return data["data"] if token_type == CONSTANTS.DEFAULT_TYPE else data
 
     async def _subscribe_channels(self, ws: WSAssistant):
         """
