@@ -306,16 +306,23 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
         Connects to the trade events and order diffs websocket endpoints and listens to the messages sent by the
         exchange. Each message is stored in its own queue.
         """
+        ws_url = CONSTANTS.WSS_URL_1
+        if self._trading_pairs:
+            token_type = FelixAPIOrderBookDataSource.trading_pair_symbol_type(trading_pair=self._trading_pairs[0])
+            ws_url = CONSTANTS.WSS_URL_1 if token_type != CONSTANTS.DEFAULT_TYPE else CONSTANTS.WSS_URL_2
+
         ws = None
         while True:
             try:
                 ws: WSAssistant = await self._api_factory.get_ws_assistant()
-                await ws.connect(ws_url=CONSTANTS.WSS_URL_1,
+                await ws.connect(ws_url=ws_url,
                                  ping_timeout=CONSTANTS.WS_HEARTBEAT_TIME_INTERVAL)
                 await self._subscribe_channels(ws)
 
                 async for ws_response in ws.iter_messages():
                     data = ws_response.data
+                    if "data" in data:
+                        data = data["data"]
                     if "result" in data:
                         continue
                     event_type = data.get("e")
@@ -384,8 +391,11 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
                     api_factory=self._api_factory,
                     throttler=self._throttler,
                     time_synchronizer=self._time_synchronizer)
-                trade_params.append(f"{symbol.lower()}@trade")
-                depth_params.append(f"{symbol.lower()}@depth@100ms")
+                token_type = FelixAPIOrderBookDataSource.trading_pair_symbol_type(trading_pair=trading_pair)
+                if token_type == 1:
+                    symbol = symbol.lower()
+                trade_params.append(f"{symbol}@trade")
+                depth_params.append(f"{symbol}@depth@100ms" if token_type == 1 else f"{symbol}@depth")
             payload = {
                 "method": "SUBSCRIBE",
                 "params": trade_params,

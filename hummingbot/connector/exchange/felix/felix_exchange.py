@@ -499,14 +499,14 @@ class FelixExchange(ExchangeBase):
                 data=api_params,
                 is_auth_required=True)
             if "code" not in order_result or order_result["code"] != 0:
-                self.logger().error(f"Failed to created order: {order_result}")
+                self.logger().error(f"Failed to created order: {order_result}, api_params: {api_params}")
                 raise Exception(order_result["msg"])
 
             self.logger().debug(f"Created order: {order_result}")
 
             exchange_order_id = str(order_result["data"]["orderId"])
             if not exchange_order_id:
-                self.logger().error(f"Failed to created order: {order_result}")
+                self.logger().error(f"Failed to created order: {order_result}, api_params: {api_params}")
                 raise Exception("empty exchange_order_id")
 
             order_update: OrderUpdate = OrderUpdate(
@@ -816,7 +816,7 @@ class FelixExchange(ExchangeBase):
                             flat_fees=[TokenAmount(amount=Decimal(trade["commission"]), token=trade["commissionAsset"])]
                         )
                         trade_update = TradeUpdate(
-                            trade_id=str(trade["id"]),
+                            trade_id=str(trade["id"]) if "id" in trade else str(trade["tradeId"]),
                             client_order_id=tracked_order.client_order_id,
                             exchange_order_id=exchange_order_id,
                             trading_pair=trading_pair,
@@ -827,11 +827,11 @@ class FelixExchange(ExchangeBase):
                             fill_timestamp=trade["time"] * 1e-3,
                         )
                         self._order_tracker.process_trade_update(trade_update)
-                    elif self.is_confirmed_new_order_filled_event(str(trade["id"]), exchange_order_id, trading_pair):
+                    elif self.is_confirmed_new_order_filled_event(str(trade["id"]) if "id" in trade else str(trade["tradeId"]), exchange_order_id, trading_pair):
                         # This is a fill of an order registered in the DB but not tracked any more
                         self._current_trade_fills.add(TradeFillOrderDetails(
                             market=self.display_name,
-                            exchange_trade_id=str(trade["id"]),
+                            exchange_trade_id=str(trade["id"]) if "id" in trade else str(trade["tradeId"]),
                             symbol=trading_pair))
                         self.trigger_event(
                             MarketEvent.OrderFilled,
@@ -851,7 +851,7 @@ class FelixExchange(ExchangeBase):
                                         )
                                     ]
                                 ),
-                                exchange_trade_id=str(trade["id"])
+                                exchange_trade_id=str(trade["id"]) if "id" in trade else str(trade["tradeId"])
                             ))
                         self.logger().info(f"Recreating missing trade in TradeFill: {trade}")
 

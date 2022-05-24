@@ -11,7 +11,7 @@ MAX_ORDER_ID_LEN = 32
 REST_URL_1 = "https://api.binance.com/api"
 REST_URL_2 = "https://trade.felix.com"
 WSS_URL_1 = "wss://stream.binance.com/ws"
-WSS_URL_2 = "wss://trade.felix.com/ws"
+WSS_URL_2 = "wss://trade.felix.com/stream"
 
 # Public API endpoints or FelixClient function
 TICKER_PRICE_CHANGE_PATH_URL = "/v1/market/trading-pair"

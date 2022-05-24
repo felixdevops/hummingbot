@@ -21,9 +21,10 @@ class FelixOrderBook(OrderBook):
         """
         if metadata:
             msg.update(metadata)
+        msg_ts = msg["lastUpdateId"] if "lastUpdateId" in msg else int(timestamp * 1e-3)
         return OrderBookMessage(OrderBookMessageType.SNAPSHOT, {
             "trading_pair": msg["trading_pair"],
-            "update_id": msg["lastUpdateId"],
+            "update_id": msg_ts,
             "bids": msg["bids"],
             "asks": msg["asks"]
         }, timestamp=timestamp)
@@ -42,10 +43,11 @@ class FelixOrderBook(OrderBook):
         """
         if metadata:
             msg.update(metadata)
-        return OrderBookMessage(OrderBookMessageType.DIFF, {
+        msg_ts = msg["u"] if "u" in msg else int(timestamp * 1e-3)
+        return OrderBookMessage(OrderBookMessageType.DIFF if "u" in msg else OrderBookMessageType.SNAPSHOT, {
             "trading_pair": msg["trading_pair"],
-            "first_update_id": msg["U"],
-            "update_id": msg["u"],
+            # "first_update_id": msg["U"] if "U" in msg else msg["u"] if "u" in msg else msg["E"],
+            "update_id": msg_ts,
             "bids": msg["b"],
             "asks": msg["a"]
         }, timestamp=timestamp)
