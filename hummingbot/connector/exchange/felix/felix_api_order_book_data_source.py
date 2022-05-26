@@ -35,18 +35,15 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(self,
                  trading_pairs: List[str],
-                 token_type: int = CONSTANTS.DEFAULT_TYPE,
                  api_factory: Optional[WebAssistantsFactory] = None,
                  throttler: Optional[AsyncThrottler] = None,
                  time_synchronizer: Optional[TimeSynchronizer] = None):
         super().__init__(trading_pairs)
         self._time_synchronizer = time_synchronizer
-        self._token_type = token_type
         self._throttler = throttler
         self._api_factory = api_factory or web_utils.build_api_factory(
             throttler=self._throttler,
             time_synchronizer=self._time_synchronizer,
-            token_type=self._token_type,
         )
         self._order_book_create_function = lambda: OrderBook()
         self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
