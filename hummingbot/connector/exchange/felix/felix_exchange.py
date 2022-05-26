@@ -543,10 +543,7 @@ class FelixExchange(ExchangeBase):
         :param order_id: the client id of the order to cancel
         """
         tracked_order = self._order_tracker.fetch_tracked_order(order_id)
-        if tracked_order is not None:
-            if not tracked_order.exchange_order_id:
-                return {"clientId": order_id}
-
+        if tracked_order is not None and tracked_order.exchange_order_id:
             try:
                 api_params = {
                     "orderId": tracked_order.exchange_order_id,
