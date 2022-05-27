@@ -25,7 +25,7 @@ ACCOUNTS_PATH_URL = "/open/v1/account/spot"
 MY_TRADES_PATH_URL = "/open/v1/orders/trades"
 CREATE_ORDER_PATH_URL = "/open/v1/orders"
 CANCEL_ORDER_PATH_URL = "/open/v1/orders/cancel"
-QUERY_ORDER_PATH_URL = "/open/v1/orders/detail"
+QUERY_ORDER_PATH_URL = "/open/v1/orders"
 USER_STREAM_PATH_URL = "/open/v1/user-data-stream"
 
 WS_HEARTBEAT_TIME_INTERVAL = 30
@@ -96,5 +96,5 @@ RATE_LIMITS = [
     RateLimit(limit_id=CANCEL_ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
               linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1)]),
     RateLimit(limit_id=QUERY_ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1)]),
+              linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 5)]),
 ]

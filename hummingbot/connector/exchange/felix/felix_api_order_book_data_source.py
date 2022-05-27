@@ -224,6 +224,9 @@ class FelixAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
                 if "result" in json_msg:
                     continue
+                if "t" not in json_msg:
+                    self.logger().debug(f"Trade event doesn't have 't'(trade ID): {json_msg}")
+                    continue
                 trading_pair = await FelixAPIOrderBookDataSource.trading_pair_associated_to_exchange_symbol(
                     symbol=json_msg["s"],
                     api_factory=self._api_factory,

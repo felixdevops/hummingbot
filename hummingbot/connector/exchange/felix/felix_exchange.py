@@ -853,48 +853,66 @@ class FelixExchange(ExchangeBase):
                         self.logger().info(f"Recreating missing trade in TradeFill: {trade}")
 
     async def _update_order_status(self):
-        # This is intended to be a backup measure to close straggler orders, in case Felix's user stream events
-        # are not working.
-        # The minimum poll interval for order status is 10 seconds.
+        """
+        This is intended to be a backup measure to close straggler orders, in case Felix's user stream events
+        are not working.
+        The minimum poll interval for order status is 10 seconds.
+        """
         last_tick = self._last_poll_timestamp / self.UPDATE_ORDER_STATUS_MIN_INTERVAL
         current_tick = self.current_timestamp / self.UPDATE_ORDER_STATUS_MIN_INTERVAL
 
-        tracked_orders: List[InFlightOrder] = list(self.in_flight_orders.values())
+        tracked_orders: List[InFlightOrder] = [o for o in list(self.in_flight_orders.values()) if o.exchange_order_id]
         if current_tick > last_tick and len(tracked_orders) > 0:
 
-            tasks = [self._api_request(
-                method=RESTMethod.GET,
-                path_url=CONSTANTS.QUERY_ORDER_PATH_URL,
-                params={
-                    "orderId": o.exchange_order_id},
-                is_auth_required=True) for o in tracked_orders if o.exchange_order_id]
-            self.logger().debug(f"Polling for order status updates of {len(tasks)} orders.")
+            fromId = min([int(o.exchange_order_id) for o in tracked_orders])
+
+            tasks = []
+            trading_pairs = self._order_book_tracker._trading_pairs
+            for trading_pair in trading_pairs:
+                params = {
+                    "symbol": await FelixAPIOrderBookDataSource.exchange_symbol_associated_to_pair(
+                        trading_pair=trading_pair,
+                        api_factory=self._api_factory,
+                        throttler=self._throttler,
+                        time_synchronizer=self._felix_time_synchronizer),
+                    "fromId": str(fromId),
+                    "direct": "prev"
+                }
+                tasks.append(self._api_request(
+                    method=RESTMethod.GET,
+                    path_url=CONSTANTS.QUERY_ORDER_PATH_URL,
+                    params=params,
+                    is_auth_required=True))
+
+            self.logger().debug(f"Polling for order status updates of {len(tasks)} trading pairs.")
             results = await safe_gather(*tasks, return_exceptions=True)
-            for order_update, tracked_order in zip(results, tracked_orders):
-                client_order_id = tracked_order.client_order_id
 
-                # If the order has already been cancelled or has failed do nothing
-                if client_order_id not in self.in_flight_orders:
-                    continue
-
-                if isinstance(order_update, Exception) or "code" not in order_update or order_update["code"] != 0:
+            for order_updates, trading_pair in zip(results, trading_pairs):
+                if isinstance(order_updates, Exception):
                     self.logger().network(
-                        f"Error fetching status update for the order {client_order_id}: {order_update}.",
-                        app_warning_msg=f"Failed to fetch status update for the order {client_order_id}."
+                        f"Error fetching status update for the orders {trading_pair}: {order_updates}.",
+                        app_warning_msg=f"Failed to fetch status update for the orders {trading_pair}."
                     )
-                    # Wait until the order not found error have repeated a few times before actually treating
-                    # it as failed. See: https://github.com/CoinAlpha/hummingbot/issues/601
-                    await self._order_tracker.process_order_not_found(client_order_id)
+                    continue
+                if "code" not in order_updates or order_updates["code"] != 0:
+                    self.logger().error(f"Failed to fetch status update for the orders {trading_pair}: {order_updates}, params={params}")
+                    raise Exception(order_updates["msg"])
 
-                else:
+                for order_update in order_updates["data"]["list"]:
+                    client_order_id = order_update["clientId"]
+
+                    # If the order has already been cancelled or has failed do nothing
+                    if client_order_id not in self.in_flight_orders:
+                        continue
+
                     # Update order execution status
-                    new_state = CONSTANTS.ORDER_STATE[order_update["data"]["status"]]
+                    new_state = CONSTANTS.ORDER_STATE[order_update["status"]]
 
                     update = OrderUpdate(
                         client_order_id=client_order_id,
-                        exchange_order_id=str(order_update["data"]["orderId"]),
-                        trading_pair=tracked_order.trading_pair,
-                        update_timestamp=order_update["data"]["createTime"] * 1e-3,
+                        exchange_order_id=str(order_update["orderId"]),
+                        trading_pair=self.in_flight_orders.get(client_order_id).trading_pair,
+                        update_timestamp=order_update["createTime"] * 1e-3,
                         new_state=new_state,
                     )
                     self._order_tracker.process_order_update(update)
