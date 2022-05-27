@@ -821,7 +821,7 @@ class FelixExchange(ExchangeBase):
                             fill_base_amount=Decimal(trade["qty"]),
                             fill_quote_amount=Decimal(trade["quoteQty"]),
                             fill_price=Decimal(trade["price"]),
-                            fill_timestamp=trade["time"] * 1e-3,
+                            fill_timestamp=float(trade["time"]) * 1e-3,
                         )
                         self._order_tracker.process_trade_update(trade_update)
                     elif self.is_confirmed_new_order_filled_event(str(trade["id"]) if "id" in trade else str(trade["tradeId"]), exchange_order_id, trading_pair):
