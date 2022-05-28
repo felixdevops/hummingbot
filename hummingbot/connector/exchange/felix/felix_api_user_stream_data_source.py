@@ -131,7 +131,7 @@ class FelixAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 is_auth_required=True,
                 return_err=True)
 
-            if "code" in data:
+            if "code" not in data or data["data"] != 0:
                 self.logger().warning(f"Failed to refresh the listen key {self._current_listen_key}: {data}")
                 return False
 
