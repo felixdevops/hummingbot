@@ -875,6 +875,7 @@ class FelixExchange(ExchangeBase):
                         api_factory=self._api_factory,
                         throttler=self._throttler,
                         time_synchronizer=self._felix_time_synchronizer),
+                    "type": -1,
                     "fromId": str(fromId),
                     "direct": "prev"
                 }
