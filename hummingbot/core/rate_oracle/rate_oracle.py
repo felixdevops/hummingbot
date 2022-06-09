@@ -53,7 +53,7 @@ class RateOracle(NetworkBase):
     coingecko_supported_vs_tokens_url = "https://api.coingecko.com/api/v3/simple/supported_vs_currencies"
     kucoin_price_url = "https://api.kucoin.com/api/v1/market/allTickers"
     ascend_ex_price_url = "https://ascendex.com/api/pro/v1/ticker"
-    felix_price_url = "https://trade.felix.com/v1/market/trading-pairs?quoteAsset=&offset=0&limit=10000"
+    felix_price_url = "https://trade.felix.com/v1/market/trading-pairs?offset=0&limit=10000"
 
     coingecko_token_categories = [
         "cryptocurrency",
