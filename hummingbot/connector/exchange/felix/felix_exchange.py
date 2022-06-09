@@ -26,7 +26,7 @@ from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_tracker import OrderBookTracker
 from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker import UserStreamTracker
-from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
+from hummingbot.core.event.events import BuyOrderCreatedEvent, MarketEvent, OrderFilledEvent, SellOrderCreatedEvent
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
@@ -88,6 +88,7 @@ class FelixExchange(ExchangeBase):
         self._last_poll_timestamp = 0
         self._last_trades_poll_felix_timestamp = 0
         self._order_tracker: ClientOrderTracker = ClientOrderTracker(connector=self)
+        self._pending_creation_events = {}
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -516,7 +517,37 @@ class FelixExchange(ExchangeBase):
                 update_timestamp=order_result["data"]["createTime"] * 1e-3,
                 new_state=OrderState.OPEN,
             )
-            self._order_tracker.process_order_update(order_update)
+            tracked_order = self._order_tracker.fetch_order(order_id, exchange_order_id)
+            if tracked_order:
+                previous_state: OrderState = tracked_order.current_state
+
+                updated: bool = tracked_order.update_with_order_update(order_update)
+                if updated and previous_state == OrderState.PENDING_CREATE:
+                    self.logger().info(
+                        f"Created {tracked_order.order_type.name.upper()} {tracked_order.trade_type.name.upper()} order "
+                        f"{tracked_order.client_order_id} for {tracked_order.amount} {tracked_order.trading_pair}."
+                    )
+                    event_tag = MarketEvent.BuyOrderCreated if tracked_order.trade_type is TradeType.BUY else MarketEvent.SellOrderCreated
+                    event_class = BuyOrderCreatedEvent if tracked_order.trade_type is TradeType.BUY else SellOrderCreatedEvent
+                    self.trigger_event(
+                        event_tag,
+                        event_class(
+                            self.current_timestamp,
+                            tracked_order.order_type,
+                            tracked_order.trading_pair,
+                            tracked_order.amount,
+                            tracked_order.price,
+                            tracked_order.client_order_id,
+                            tracked_order.creation_timestamp,
+                            exchange_order_id=tracked_order.exchange_order_id,
+                        ),
+                    )
+
+            if exchange_order_id in self._pending_creation_events:
+                pending_creation_events = self._pending_creation_events[exchange_order_id]
+                del self._pending_creation_events[exchange_order_id]
+                for event_message in pending_creation_events:
+                    self._user_stream_tracker._user_stream.put_nowait(event_message)
 
         except asyncio.CancelledError:
             raise
@@ -698,38 +729,49 @@ class FelixExchange(ExchangeBase):
                 if event_type == "executionReport":
                     execution_type = event_message.get("x")
                     if execution_type != "CANCELED":
-                        client_order_id = event_message.get("c")
+                        exchange_order_id = event_message.get("c")
                     else:
-                        client_order_id = event_message.get("C")
+                        exchange_order_id = event_message.get("C")
+
+                    tracked_order = None
+                    for order in self._order_tracker.all_orders.values():
+                        if order.exchange_order_id == exchange_order_id:
+                            tracked_order = order
+                            client_order_id = tracked_order.client_order_id
+                            break
+
+                    if tracked_order is None:
+                        if exchange_order_id not in self._pending_creation_events:
+                            self._pending_creation_events[exchange_order_id] = []
+                        self._pending_creation_events[exchange_order_id].append(event_message)
+                        continue
 
                     if execution_type == "TRADE":
-                        tracked_order = self._order_tracker.fetch_order(client_order_id=client_order_id)
-                        if tracked_order is not None:
-                            fee = TradeFeeBase.new_spot_fee(
-                                fee_schema=self.trade_fee_schema(),
-                                trade_type=tracked_order.trade_type,
-                                percent_token=event_message["N"],
-                                flat_fees=[TokenAmount(amount=Decimal(event_message["n"]), token=event_message["N"])]
-                            )
-                            trade_update = TradeUpdate(
-                                trade_id=str(event_message["t"]),
-                                client_order_id=client_order_id,
-                                exchange_order_id=str(event_message["i"]),
-                                trading_pair=tracked_order.trading_pair,
-                                fee=fee,
-                                fill_base_amount=Decimal(event_message["l"]),
-                                fill_quote_amount=Decimal(event_message["l"]) * Decimal(event_message["L"]),
-                                fill_price=Decimal(event_message["L"]),
-                                fill_timestamp=event_message["T"] * 1e-3,
-                            )
-                            self._order_tracker.process_trade_update(trade_update)
+                        fee = TradeFeeBase.new_spot_fee(
+                            fee_schema=self.trade_fee_schema(),
+                            trade_type=tracked_order.trade_type,
+                            percent_token=event_message["N"],
+                            flat_fees=[TokenAmount(amount=Decimal(event_message["n"]), token=event_message["N"])]
+                        )
+                        trade_update = TradeUpdate(
+                            trade_id=str(event_message["t"]),
+                            client_order_id=client_order_id,
+                            exchange_order_id=str(event_message["i"]),
+                            trading_pair=tracked_order.trading_pair,
+                            fee=fee,
+                            fill_base_amount=Decimal(event_message["l"]),
+                            fill_quote_amount=Decimal(event_message["l"]) * Decimal(event_message["L"]),
+                            fill_price=Decimal(event_message["L"]),
+                            fill_timestamp=event_message["T"] * 1e-3,
+                        )
+                        self._order_tracker.process_trade_update(trade_update)
 
                     tracked_order = self.in_flight_orders.get(client_order_id)
                     if tracked_order is not None:
                         order_update = OrderUpdate(
                             trading_pair=tracked_order.trading_pair,
                             update_timestamp=event_message["E"] * 1e-3,
-                            new_state=CONSTANTS.ORDER_STATE[event_message["X"]],
+                            new_state=CONSTANTS.ORDER_STATE_2[event_message["X"]],
                             client_order_id=client_order_id,
                             exchange_order_id=str(event_message["i"]),
                         )

@@ -61,6 +61,18 @@ ORDER_STATE = {
     6: OrderState.FAILED,
 }
 
+# Order States
+ORDER_STATE_2 = {
+    "PENDING": OrderState.PENDING_CREATE,
+    "NEW": OrderState.OPEN,
+    "FILLED": OrderState.FILLED,
+    "PARTIALLY_FILLED": OrderState.PARTIALLY_FILLED,
+    "PENDING_CANCEL": OrderState.OPEN,
+    "CANCELED": OrderState.CANCELED,
+    "REJECTED": OrderState.FAILED,
+    "EXPIRED": OrderState.FAILED,
+}
+
 ORDER_TYPE = {
     OrderType.LIMIT: "1",
     OrderType.MARKET: "2",
