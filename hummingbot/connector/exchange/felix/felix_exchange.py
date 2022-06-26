@@ -41,7 +41,7 @@ s_decimal_NaN = Decimal("nan")
 class FelixExchange(ExchangeBase):
     SHORT_POLL_INTERVAL = 5.0
     UPDATE_ORDER_STATUS_MIN_INTERVAL = 10.0
-    LONG_POLL_INTERVAL = 120.0
+    LONG_POLL_INTERVAL = 10.0
 
     def __init__(self,
                  felix_api_key: str,
