@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from typing import Awaitable
 from unittest.mock import MagicMock, patch

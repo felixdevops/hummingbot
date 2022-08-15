@@ -134,6 +134,7 @@ class CreateCommand:
 
         if file_name is None:
             file_name = await self.prompt_new_file_name(strategy)
+            save_previous_strategy_value(file_name)
             if self.app.to_stop_config:
                 self.restore_config_legacy(config_map, config_map_backup)
                 self.app.set_text("")

@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 GATEWAY_READY_TIMEOUT = 300  # seconds
 
+
 class StartCommand(GatewayChainApiManager):
     _in_start_check: bool = False
 

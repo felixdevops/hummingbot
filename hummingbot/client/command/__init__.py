@@ -18,7 +18,6 @@ from .status_command import StatusCommand
 from .stop_command import StopCommand
 from .ticker_command import TickerCommand
 
-
 __all__ = [
     BalanceCommand,
     ConfigCommand,

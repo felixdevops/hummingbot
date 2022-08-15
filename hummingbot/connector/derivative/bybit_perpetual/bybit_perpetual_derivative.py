@@ -637,6 +637,9 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
 
         return trade_update
 
+        # Trigger balance update because Bybit doesn't have balance updates through the websocket
+        safe_ensure_future(self._update_balances())
+
     def _process_order_event_message(self, order_msg: Dict[str, Any]):
         """
         Updates in-flight order and triggers cancellation or failure event if needed.
