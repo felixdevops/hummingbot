@@ -49,16 +49,25 @@ export const validateSpender: Validator = mkValidator(
   (val) =>
     typeof val === 'string' &&
     (val === 'uniswap' ||
+      val === 'perp' ||
+      val === 'uniswapLP' ||
       val === 'pangolin' ||
+      val === 'traderjoe' ||
       val === 'sushiswap' ||
       val === 'viperswap' ||
+      val === 'openocean' ||
+      val === 'quickswap' ||
+      val === 'defikingdoms' ||
+      val === 'defira' ||
       isAddress(val))
 );
 
 export const validateNonce: Validator = mkValidator(
   'nonce',
   invalidNonceError,
-  (val) => typeof val === 'number' && val >= 0 && Number.isInteger(val),
+  (val) =>
+    typeof val === 'undefined' ||
+    (typeof val === 'number' && val >= 0 && Number.isInteger(val)),
   true
 );
 
